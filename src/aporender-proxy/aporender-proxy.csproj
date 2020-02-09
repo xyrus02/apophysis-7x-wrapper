@@ -35,9 +35,10 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ApophysisLogEventArgs.cs" />
+    <Compile Include="ApophysisLogEventHandler.cs" />
     <Compile Include="ApophysisNative.cs" />
     <Compile Include="ApophysisOperation.cs" />
     <Compile Include="ApophysisOperationChangedEventArgs.cs" />
@@ -46,6 +47,7 @@
     <Compile Include="ApophysisProgressEventHandler.cs" />
     <Compile Include="ApophysisException.cs" />
     <Compile Include="IApophysisNative.cs" />
+    <Compile Include="ImageSize.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
