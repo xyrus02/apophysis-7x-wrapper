@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -18,17 +17,19 @@ namespace Apophysis
         private readonly NativeMethods.ApophysisInitializeLibrary _initializeLibrary;
         private readonly NativeMethods.ApophysisInitializePlugin _initializePlugin;
         private readonly NativeMethods.ApophysisDestroyLibrary _destroyLibrary;
-        private readonly NativeMethods.ApophysisStartProcessAndWait _startProcessAndWait;
+        private readonly NativeMethods.ApophysisStartProcessAndWait _startRenderingAndWait;
+        private readonly NativeMethods.ApophysisSetLogEnabled _setLogEnabled;
 
         private readonly NativeMethods.ParametersSetString _setXml;
-        private readonly NativeMethods.ParametersSetString _setLogPath;
         private readonly NativeMethods.ParametersSetOutputDimensions _setSize;
         private readonly NativeMethods.ParametersSetSamplingParameters _setAntialiasing;
         private readonly NativeMethods.ParametersSetSamplesPerPixel _setSamplesPerPixel;
-        private readonly NativeMethods.ParametersSetImagePaths _setOutputPaths;
+        private readonly NativeMethods.ParametersSetImagePaths _setOutput;
+        private readonly NativeMethods.ParametersUpdateDependencies _updateDependencies;
 
         private readonly NativeMethods.EventsSetOnOperationChangeCallback _setOnOperationChangeCallback;
         private readonly NativeMethods.EventsSetOnProgressCallback _setOnProgressCallback;
+        private readonly NativeMethods.EventsSetOnLogCallback _setOnLogCallback;
 
         private readonly NativeMethods.GetRegisteredNameCount _getRegisteredNameCount;
         private readonly NativeMethods.GetRegisteredNameAt _getRegisteredNameAt;
@@ -37,16 +38,15 @@ namespace Apophysis
         
         private readonly NativeMethods.OnProgressCallback _handleOnProgress;
         private readonly NativeMethods.OnOperationChangeCallback _handleOnOperationChange;
+        private readonly NativeMethods.OnLogCallback _handleOnLog;
         
         private string _parameters;
         private int _threadingLevel;
-        private Size _imageSize;
+        private ImageSize _imageSize;
         private double _samplesPerPixel;
         private int _osaa;
         private double _osaaFilterRadius;
-        private string _imagePath;
-        private string _alphaImagePath;
-        private string _logPath;
+        
 
         ~ApophysisNative()
         {
@@ -62,7 +62,11 @@ namespace Apophysis
 
                 if (!File.Exists(libraryPath))
                 {
-                    throw new FileNotFoundException($"The native Apophysis library doesn't exist at \"${libraryPath}\"");
+                    libraryPath = Path.Combine(assemblyDir, $"aporender.dll");
+                    if (!File.Exists(libraryPath))
+                    {
+                        throw new FileNotFoundException($"The native Apophysis library doesn't exist at \"${libraryPath}\"");   
+                    }
                 }
                 
                 _hModule = NativeMethods.LoadLibrary(libraryPath);
@@ -81,32 +85,50 @@ namespace Apophysis
             _initializeLibrary = GetDelegate<NativeMethods.ApophysisInitializeLibrary>("ApophysisInitializeLibrary");
             _initializePlugin = GetDelegate<NativeMethods.ApophysisInitializePlugin>("ApophysisInitializePlugin");
             _setAntialiasing = GetDelegate<NativeMethods.ParametersSetSamplingParameters>("ParametersSetSamplingParameters");
-            _setOutputPaths = GetDelegate<NativeMethods.ParametersSetImagePaths>("ParametersSetImagePaths");
             _setSamplesPerPixel = GetDelegate<NativeMethods.ParametersSetSamplesPerPixel>("ParametersSetSamplesPerPixel");
             _setSize = GetDelegate<NativeMethods.ParametersSetOutputDimensions>("ParametersSetOutputDimensions");
-            _setLogPath = GetDelegate<NativeMethods.ParametersSetString>("ParametersSetLogSavePathString");
+            _setLogEnabled = GetDelegate<NativeMethods.ApophysisSetLogEnabled>("ApophysisSetLogEnabled");
             _setXml = GetDelegate<NativeMethods.ParametersSetString>( "ParametersSetParameterString");
-            _startProcessAndWait = GetDelegate<NativeMethods.ApophysisStartProcessAndWait>( "ApophysisStartRenderingProcessAndWait");
+            _setOutput = GetDelegate<NativeMethods.ParametersSetImagePaths>("ParametersSetImagePaths");
+            _startRenderingAndWait = GetDelegate<NativeMethods.ApophysisStartProcessAndWait>( "ApophysisStartRenderingProcessAndWait");
             _destroyLibrary = GetDelegate<NativeMethods.ApophysisDestroyLibrary>("ApophysisDestroyLibrary");
             _setOnOperationChangeCallback = GetDelegate<NativeMethods.EventsSetOnOperationChangeCallback>("EventsSetOnOperationChangeCallback");
             _setOnProgressCallback = GetDelegate<NativeMethods.EventsSetOnProgressCallback>("EventsSetOnProgressCallback");
+            _setOnLogCallback = GetDelegate<NativeMethods.EventsSetOnLogCallback>("EventsSetOnLogCallback");
             _getRegisteredNameCount = GetDelegate<NativeMethods.GetRegisteredNameCount>("ApophysisGetRegisteredNameCount");
             _getRegisteredNameAt = GetDelegate<NativeMethods.GetRegisteredNameAt>( "ApophysisGetRegisteredNameAt");
             _getRegisteredAttribCount = GetDelegate<NativeMethods.GetRegisteredNameCount>("ApophysisGetRegisteredAttribCount");
             _getRegisteredAttribAt = GetDelegate<NativeMethods.GetRegisteredNameAt>("ApophysisGetRegisteredAttribAt");
+            _updateDependencies = GetDelegate<NativeMethods.ParametersUpdateDependencies>("ParametersUpdateDependencies");
 
             _handleOnProgress = HandleOnProgress;
             _handleOnOperationChange = HandleOnOperationChange;
+            _handleOnLog = HandleOnLog;
             
             try
             {
-                _initializeLibrary.Invoke();
+                _setLogEnabled.Invoke(1);
+                _setSize(512, 384);
+                _setAntialiasing(1, 0.72);
                 _setOnProgressCallback.Invoke(Marshal.GetFunctionPointerForDelegate(_handleOnProgress));
                 _setOnOperationChangeCallback.Invoke(Marshal.GetFunctionPointerForDelegate(_handleOnOperationChange));
+                _setOnLogCallback.Invoke(Marshal.GetFunctionPointerForDelegate(_handleOnLog));
             }
             catch (Exception exception)
             {
                 throw new ApophysisException(_hModule, "Failed to initialize library.", exception);
+            }
+        }
+
+        public void InitializeLibrary()
+        {
+            try
+            {
+                _initializeLibrary.Invoke();
+            }
+            catch (Exception exception)
+            {
+                throw new ApophysisException(_hModule, "Failed to start renderer.", exception);
             }
         }
         public void Dispose()
@@ -140,26 +162,40 @@ namespace Apophysis
                 throw new ApophysisException(_hModule, $"Failed to initialize plugin \"{dllPath}\".", exception);
             }
         }
-        public bool RenderToGraphics(Graphics targetGraphics)
+        public void RenderToStream(Stream outputStream)
         {
-            if (targetGraphics == null)
+            if (outputStream == null)
             {
-                throw new ArgumentNullException(nameof(targetGraphics));
+                throw new ArgumentNullException(nameof(outputStream));
             }
-
-            var handle = targetGraphics.GetHdc();
-            uint result;
+            
+            var tempFile = Path.GetTempFileName() + ".bmp";
 
             try
             {
-                result = _startProcessAndWait.Invoke(handle);
+                _setOutput.Invoke(tempFile, null);
+                
+                var result = _startRenderingAndWait.Invoke(IntPtr.Zero);
+                if (result != 0)
+                {
+                    throw new ExternalException("Renderer did not return an E_OK state.");
+                }
+
+                using var fs = File.Open(tempFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+                fs.CopyTo(outputStream);
             }
             catch (Exception e)
             {
                 throw new ApophysisException(_hModule, "Rendering failed due to an internal error.", e);
             }
-
-            return result == 0;
+            finally
+            {
+                if (File.Exists(tempFile))
+                {
+                    File.Delete(tempFile);
+                }
+            }
         }
 
         public string Parameters
@@ -211,7 +247,7 @@ namespace Apophysis
                 }
             }
         }
-        public Size ImageSize
+        public ImageSize ImageSize
         {
             get => _imageSize;
             set
@@ -231,6 +267,7 @@ namespace Apophysis
                 try
                 {
                     _setSize.Invoke(value.Width, value.Height);
+                    _updateDependencies.Invoke();
                 }
                 catch (Exception e)
                 {
@@ -258,6 +295,7 @@ namespace Apophysis
                 try
                 {
                     _setSamplesPerPixel.Invoke(value);
+                    _updateDependencies.Invoke();
                 }
                 catch (Exception e)
                 {
@@ -285,6 +323,7 @@ namespace Apophysis
                 try
                 {
                     _setAntialiasing.Invoke(value, _osaaFilterRadius);
+                    _updateDependencies.Invoke();
                 }
                 catch (Exception e)
                 {
@@ -312,6 +351,7 @@ namespace Apophysis
                 try
                 {
                     _setAntialiasing.Invoke(_osaa, value);
+                    _updateDependencies.Invoke();
                 }
                 catch (Exception e)
                 {
@@ -320,75 +360,9 @@ namespace Apophysis
             }
         }
 
-        public string LogPath
-        {
-            get => _logPath;
-            set
-            {
-                if (Equals(_logPath, value))
-                {
-                    return;
-                }
-                
-                _logPath = string.IsNullOrWhiteSpace(value) ? null : value;
-                
-                try
-                {
-                    _setLogPath.Invoke(_logPath);
-                }
-                catch (Exception e)
-                {
-                    throw new ApophysisException(_hModule, "Failed to set log path.", e);
-                }
-            }
-        }
-        public string ImagePath
-        {
-            get => _imagePath;
-            set
-            {
-                if (Equals(_imagePath, value))
-                {
-                    return;
-                }
-                
-                _imagePath = string.IsNullOrWhiteSpace(value) ? null : value;
-                
-                try
-                {
-                    _setOutputPaths.Invoke(value, _alphaImagePath);
-                }
-                catch (Exception e)
-                {
-                    throw new ApophysisException(_hModule, "Failed to set output image path.", e);
-                }
-            }
-        }
-        public string AlphaImagePath
-        {
-            get => _alphaImagePath;
-            set
-            {
-                if (Equals(_alphaImagePath, value))
-                {
-                    return;
-                }
-                
-                _alphaImagePath = string.IsNullOrWhiteSpace(value) ? null : value;
-                
-                try
-                {
-                    _setOutputPaths.Invoke(_imagePath, value);
-                }
-                catch (Exception e)
-                {
-                    throw new ApophysisException(_hModule, "Failed to set alpha image path.", e);
-                }
-            }
-        }
-
         public event ApophysisProgressEventHandler Progress;
         public event ApophysisOperationChangedEventHandler OperationChanged;
+        public event ApophysisLogEventHandler Log;
 
         public IEnumerable<string> GetRegisteredNames()
         {
@@ -452,6 +426,10 @@ namespace Apophysis
         private void HandleOnOperationChange(int dwOperation)
         {
             OperationChanged?.Invoke(this, new ApophysisOperationChangedEventArgs(dwOperation));
+        }
+        private void HandleOnLog(string fileName, string message)
+        {
+            Log?.Invoke(this, new ApophysisLogEventArgs(fileName, message));
         }
 
         private T GetDelegate<T>(string name)
