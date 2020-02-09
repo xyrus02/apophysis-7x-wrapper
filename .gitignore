@@ -1,5 +1,6 @@
 .*/
-src/bin/
-src/obj/
+bin/
+obj/
 src/*.user
 target/
+src/packages/
