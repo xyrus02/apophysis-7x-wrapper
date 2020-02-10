@@ -47,6 +47,7 @@
     <Compile Include="ApophysisProgressEventHandler.cs" />
     <Compile Include="ApophysisException.cs" />
     <Compile Include="IApophysisNative.cs" />
+    <Compile Include="ImageFormat.cs" />
     <Compile Include="ImageSize.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

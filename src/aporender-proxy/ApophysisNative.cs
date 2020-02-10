@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 namespace Apophysis
 {
     [SuppressMessage("ReSharper", "PrivateFieldCanBeConvertedToLocalVariable")]
+    [SuppressMessage("ReSharper", "ConvertToAutoProperty")]
     public class ApophysisNative : IApophysisNative
     {
         private readonly IntPtr _hModule;
@@ -46,8 +47,8 @@ namespace Apophysis
         private double _samplesPerPixel;
         private int _osaa;
         private double _osaaFilterRadius;
+        private ImageFormat _imageFormat;
         
-
         ~ApophysisNative()
         {
             ReleaseUnmanagedResources();
@@ -169,8 +170,7 @@ namespace Apophysis
                 throw new ArgumentNullException(nameof(outputStream));
             }
             
-            var tempFile = Path.GetTempFileName() + ".bmp";
-
+            var tempFile = Path.GetTempFileName() + "." + _imageFormat.ToString().ToLowerInvariant();
             try
             {
                 _setOutput.Invoke(tempFile, null);
@@ -198,6 +198,11 @@ namespace Apophysis
             }
         }
 
+        public ImageFormat ImageFormat
+        {
+            get => _imageFormat;
+            set => _imageFormat = value;
+        }
         public string Parameters
         {
             get => _parameters;
