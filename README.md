@@ -12,7 +12,7 @@ The wrapper library depends on two native DLL files named `aporender.x86.dll` an
 The library is available on NuGet.org: https://www.nuget.org/packages/XyrusWorx.Apophysis7x/
 This allows you to easily add the functionality of the Apophysis 7x rendering engine to your own .NET application using:
 
-  dotnet add package XyrusWorx.Apophysis7x --version 2.15.3
+  dotnet add package XyrusWorx.Apophysis7x
   
 Likewise, the CLI tool is provided as a "tool" here: https://www.nuget.org/packages/XyrusWorx.Apophysis7x.Cli/
 It's probably not what you want if you have no business with programming and just want to use the command line renderer. In this case, you may check the "Releases" section here on Github for a binary build or just compile the source code yourself.
