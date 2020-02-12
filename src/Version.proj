@@ -1,0 +1,7 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <PackageVersion>2.15.3</PackageVersion>
+        <AssemblyVersion>2.15.3</AssemblyVersion>
+        <InformationalVersion>7x.15c</InformationalVersion>
+    </PropertyGroup>
+</Project>
