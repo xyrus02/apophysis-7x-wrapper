@@ -1,0 +1,3 @@
+**
+!target/Release/netcoreapp3.1/**
+target/Release/netcoreapp3.1/*.pdb

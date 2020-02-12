@@ -1,12 +1,39 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
         <TargetFramework>netcoreapp3.1</TargetFramework>
+        <RuntimeIdentifiers>win10-x64;win10-x86</RuntimeIdentifiers>
         <RootNamespace>Apophysis</RootNamespace>
         <LangVersion>8</LangVersion>
-    </PropertyGroup>
 
+        <PackageId>XyrusWorx.Apophysis7x.Cli</PackageId>
+        <Product>Apophysis 7x</Product>
+        <Title>Apophysis 7x Command Line Renderer</Title>
+        <Company>Georg Kiehne</Company>
+        <PackageIcon>apophysis7x.png</PackageIcon>
+        <Authors>gkiehne</Authors>
+        <Description>This tool allows rendering of Apophysis Fractal Flames into images from the command line.</Description>
+        <Copyright>Apophysis (c) Scott Draves, Ronald Hordijk, Piotr Borys, Peter Sbodnov, Georg Kiehne</Copyright>
+        <RepositoryUrl>https://github.com/xyrus02/apophysis-7x-wrapper</RepositoryUrl>
+        <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
+        <IsTool>true</IsTool>
+
+        <OutputType>Exe</OutputType>
+        <OutputPath>$(MSBuildProjectDirectory)\..\..\target\$(Configuration)\</OutputPath>
+        <NoWarn>NU5128</NoWarn>
+    </PropertyGroup>
+    
+    <Import Project="$(MSBuildProjectDirectory)\..\Version.proj" />
+
+    <ItemGroup>
+        <None Include="..\..\assets\apophysis7x.png">
+            <Link>apophysis7x.png</Link>
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+            <Pack>true</Pack>
+            <PackagePath />
+        </None>
+    </ItemGroup>
+    
     <ItemGroup>
       <ProjectReference Include="..\aporender\aporender.csproj" />
     </ItemGroup>

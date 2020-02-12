@@ -4,6 +4,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "apophysis", "apophysis\apop
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "aporender", "aporender\aporender.csproj", "{B9317E08-F36F-437A-BA8C-F60813D298E9}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Properties", "Properties", "{0977D1EF-F514-47F2-98FA-0BCDBC52E4ED}"
+ProjectSection(SolutionItems) = preProject
+	Version.proj = Version.proj
+EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

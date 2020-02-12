@@ -2,19 +2,43 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
+        <RuntimeIdentifiers>win10-x64;win10-x86</RuntimeIdentifiers>
         <RootNamespace>Apophysis</RootNamespace>
         <LangVersion>8</LangVersion>
+
+        <PackageId>XyrusWorx.Apophysis7x</PackageId>
+        <Product>Apophysis 7x</Product>
+        <Title>Apophysis 7x Native Render Library</Title>
+        <Company>Georg Kiehne</Company>
+        <PackageIcon>apophysis7x.png</PackageIcon>
+        <Authors>gkiehne</Authors>
+        <Description>This library wraps the native rendering logic (implemented in Delphi XE2) into a .NET Standard assembly, so it can be utilized by .NET programs.</Description>
+        <Copyright>Apophysis (c) Scott Draves, Ronald Hordijk, Piotr Borys, Peter Sbodnov, Georg Kiehne</Copyright>
+        <RepositoryUrl>https://github.com/xyrus02/apophysis-7x-wrapper</RepositoryUrl>
+        <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
+
+        <OutputPath>$(MSBuildProjectDirectory)\..\..\target\$(Configuration)\</OutputPath>
+        <NoWarn>NU5100</NoWarn>
     </PropertyGroup>
 
-    <ItemGroup>
-      <None Include="..\..\lib\aporender.x64.dll">
-        <Link>aporender.x64.dll</Link>
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Include="..\..\lib\aporender.x86.dll">
-        <Link>aporender.x86.dll</Link>
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
+    <Import Project="$(MSBuildProjectDirectory)\..\Version.proj" />
 
+    <ItemGroup>
+        <None Include="..\..\assets\apophysis7x.png">
+            <Link>apophysis7x.png</Link>
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+            <Pack>true</Pack>
+            <PackagePath />
+        </None>
+        <Content Include="..\..\lib\aporender.x64.dll">
+            <Link>aporender.x64.dll</Link>
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <Pack>true</Pack>
+        </Content>
+        <Content Include="..\..\lib\aporender.x86.dll">
+            <Link>aporender.x86.dll</Link>
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <Pack>true</Pack>
+        </Content>
+    </ItemGroup>
 </Project>
