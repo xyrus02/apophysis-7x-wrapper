@@ -37,5 +37,9 @@
     <ItemGroup>
       <ProjectReference Include="..\aporender\aporender.csproj" />
     </ItemGroup>
+    
+    <ItemGroup>
+      <PackageReference Include="Glob" Version="1.1.5" />
+    </ItemGroup>
 
 </Project>

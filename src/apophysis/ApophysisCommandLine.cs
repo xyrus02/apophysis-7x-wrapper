@@ -3,11 +3,15 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
+using GlobExpressions;
 
 namespace Apophysis
 {
     class ApophysisCommandLine
     {
+        private readonly ApophysisOutputManager _outputManager;
+        
         private static bool _useStdin;
         private static string _inputFile;
         private static string _outputFile;
@@ -16,11 +20,12 @@ namespace Apophysis
         private static double? _quality;
         private static int? _threads;
 
-        public ApophysisCommandLine() : this(null)
+        public ApophysisCommandLine(ApophysisOutputManager outputManager) : this(outputManager, null)
         {
         }
-        public ApophysisCommandLine(string[] argv)
+        public ApophysisCommandLine(ApophysisOutputManager outputManager, string[] argv)
         {
+            _outputManager = outputManager;
             ProcessArgv(argv ??  Environment.GetCommandLineArgs().Skip(1).ToArray());
         }
         
@@ -33,10 +38,23 @@ namespace Apophysis
         public double Quality => _quality ?? 50.0;
         public int Threads = _threads ?? Math.Min(1, Environment.ProcessorCount - 1);
         
+        public string[] Plugin { get; private set; }
         public bool NoLogo { get; private set; }
 
         public void Configure(IApophysisNative apophysis)
         {
+            foreach (var glob in Plugin ?? new string[0])
+            {
+                var dir = Path.IsPathRooted(glob) ? Regex.Replace(glob, "^(.+?)\\*.*$", "$1") : Environment.CurrentDirectory;
+                var pattern = Path.IsPathRooted(glob) ? glob.Substring(dir.Length) : glob;
+                
+                foreach (var file in Glob.Files(dir, pattern, GlobOptions.MatchFullPath))
+                {
+                    _outputManager.Log($"Loading plugin: {file}");
+                    apophysis.InitializePlugin(Path.Combine(dir, file));
+                }
+            }
+            
             using (var sr = new StreamReader(OpenInputStream()))
             {
                 apophysis.Parameters = sr.ReadToEnd();
@@ -57,6 +75,7 @@ Usage: {Path.GetFileName(Assembly.GetExecutingAssembly().Location)}
   [-s|--size <width>x<height>]
   [-q|--quality <samples-per-pixel>] 
   [-mt|--threads <number-of-threads>]
+  {{--plugin <plugin-dll-glob>}}
   [--nologo] [--help]
   <output-file>".TrimStart();
         }
@@ -73,6 +92,9 @@ Usage: {Path.GetFileName(Assembly.GetExecutingAssembly().Location)}
             _size = null;
             _quality = null;
             _threads = null;
+
+            NoLogo = false;
+            Plugin = new string[0];
 
             var lastarg = argv.Length - 1;
             
@@ -145,6 +167,17 @@ Usage: {Path.GetFileName(Assembly.GetExecutingAssembly().Location)}
                             Environment.Exit(1);
                         }
                         _threads = t;
+                        ++i; break;
+                    
+                    case "--plugin":
+                        var pglob = argv.ElementAtOrDefault(i + 1);
+                        if (string.IsNullOrWhiteSpace(pglob))
+                        {
+                            Console.Error.WriteLine("Missing parameter for --plugin.");
+                            Usage(Console.Error);
+                            Environment.Exit(1);
+                        }
+                        Plugin = Plugin.Concat(new[] {pglob}).ToArray();
                         ++i; break;
                     
                     case "--":
