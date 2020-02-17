@@ -17,6 +17,7 @@ namespace Apophysis
         
         string Parameters { set; }
         int ThreadingLevel { set; }
+        ImageFormat ImageFormat { set; }
         ImageSize ImageSize { set; }
         double SamplesPerPixel { set; }
         int OSAA { set; }
