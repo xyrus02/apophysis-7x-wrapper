@@ -8,8 +8,10 @@ namespace Apophysis
         {
             try
             {
-                var commandLine = new ApophysisCommandLine();
-
+                using var apophysis = new ApophysisNative();
+                using var outputManager = new ApophysisOutputManager(apophysis);
+                
+                var commandLine = new ApophysisCommandLine(outputManager);
                 if (!commandLine.NoLogo)
                 {
                     Console.WriteLine("Apophysis 7x");
@@ -17,8 +19,6 @@ namespace Apophysis
                     Console.WriteLine();   
                 }
                 
-                using var apophysis = new ApophysisNative();
-                using var outputManager = new ApophysisOutputManager(apophysis);
                 using var outStream = commandLine.OpenOutputStream();
 
                 apophysis.InitializeLibrary();

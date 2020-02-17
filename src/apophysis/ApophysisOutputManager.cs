@@ -23,10 +23,10 @@ namespace Apophysis
             _apophysis.Progress -= OnProgress;
             _apophysis.OperationChanged -= OnOperationChanged;
         }
-        
-        private static void OnLog(object o, ApophysisLogEventArgs e)
+
+        public void Log(string message, ApophysisLogType type = ApophysisLogType.Info)
         {
-            var color = e.Type switch
+            var color = type switch
             {
                 ApophysisLogType.Warning => ConsoleColor.Yellow,
                 ApophysisLogType.Error => ConsoleColor.Red,
@@ -37,9 +37,14 @@ namespace Apophysis
             {
                 var col = Console.ForegroundColor;
                 Console.ForegroundColor = color;
-                Console.WriteLine("{2:s} [{0}] {1}", e.Type.ToString().ToLowerInvariant(), e.Message, DateTime.Now);
+                Console.WriteLine("{2:s} [{0}] {1}", type.ToString().ToLowerInvariant(), message, DateTime.Now);
                 Console.ForegroundColor = col;
             }
+        }
+        
+        private void OnLog(object o, ApophysisLogEventArgs e)
+        {
+            Log(e.Message, e.Type);
         }
         private void OnOperationChanged(object o, ApophysisOperationChangedEventArgs e)
         {
