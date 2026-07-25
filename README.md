@@ -1,3 +1,5 @@
+> This repository has been relocated to [Codeberg](https://codeberg.org/xyrus02/apophysis-7x-wrapper)
+
 # Apophysis 7x Wrapper Library
 This repository contains a .NET Standard wrapper library around the native DLL found here: https://github.com/xyrus02/apophysis-7x-dll. Its purpose is to allow a relatively easy way to easily utilize the *unique(tm)* Apophysis interpretation of fractal flames in other projects.
 
